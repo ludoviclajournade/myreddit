@@ -1,0 +1,24 @@
+# nom appli
+spring:
+  application:
+    name: myreddit
+  # Configuration BD
+  datasource:
+    url: jdbc:mysql://localhost:3306/amsdb # Url Mysql
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate:
+      # Ne pas laisser en prod (mettre update au début)
+      ddl-auto: update
+  mail:
+    host: smtp.mailtrap.io
+    port: 2525
+    username: 8297a90b7e3f84
+    password: a6563d5145c58e
+    protocol: smtp
+# Reglage serveur
+server:
+  port: 10000
