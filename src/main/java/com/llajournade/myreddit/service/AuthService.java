@@ -1,21 +1,32 @@
 package com.llajournade.myreddit.service;
 
+import com.llajournade.myreddit.dto.AuthenticationResponse;
+import com.llajournade.myreddit.dto.LogingRequest;
 import com.llajournade.myreddit.dto.RegisterRequest;
+import com.llajournade.myreddit.exception.SpringRedditException;
 import com.llajournade.myreddit.model.NotificationEmail;
 import com.llajournade.myreddit.model.User;
 import com.llajournade.myreddit.model.VerificationToken;
 import com.llajournade.myreddit.repository.UserRepository;
 import com.llajournade.myreddit.repository.VerificationTokenRepository;
+import com.llajournade.myreddit.security.JwtProvider;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.transaction.Transactional;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class AuthService {
 
     //    @Autowired
@@ -26,6 +37,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final VerificationTokenRepository verificationTokenRepository;
     private final MailService mailService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtProvider jwtProvider;
 
     @Transactional
     public void signup(RegisterRequest registerRequest) {
@@ -41,7 +54,7 @@ public class AuthService {
         String token = generateVerificationToken(user);
         mailService.sendMail(new NotificationEmail("Please Activate your Account", user.getEmail(),"Thanks you for signing up to my website, " +
                 "please click on the below url to activate your account : " +
-                "http://localhost:8080/api/auth/accountVerification/" + token));
+                "http://localhost:10000/api/auth/accountVerification/" + token));
     }
 
     private String generateVerificationToken(User user) {
@@ -53,5 +66,27 @@ public class AuthService {
         verificationTokenRepository.save(verificationToken);
 
         return token;
+    }
+
+    @Transactional
+    public void verifyAccount(String token) {
+        Optional<VerificationToken> verificationToken = verificationTokenRepository.findByToken(token);
+        verificationToken.orElseThrow(() -> new SpringRedditException("Invalid Token"));
+        fetchUserAndEnable(verificationToken.get());
+    }
+
+    private void fetchUserAndEnable(VerificationToken verificationToken) {
+        String username = verificationToken.getUser().getUsername();
+        User user = userRepository.findByUsername(username).orElseThrow(() -> new SpringRedditException("User not found with name " + username));
+        user.setEnable(true);
+        userRepository.save(user);
+    }
+
+    public AuthenticationResponse login(LogingRequest loginRequest) {
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
+                loginRequest.getPassword()));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtProvider.generateToken(authentication);
+        return new AuthenticationResponse(token,loginRequest.getUsername());
     }
 }

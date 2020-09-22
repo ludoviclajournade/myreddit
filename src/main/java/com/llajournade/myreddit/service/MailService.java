@@ -23,18 +23,12 @@ public class MailService {
 
     @Async
     public void sendMail(NotificationEmail notificationEmail) {
-
-        log.info("recipient:" + notificationEmail.getRecipient() + ";"
-                + "subject:" + notificationEmail.getSubject() + ";"
-                + "body:" + notificationEmail.getBody());
-
         MimeMessagePreparator messagePreparator = mimeMessage -> {
             MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage);
             messageHelper.setFrom("ludovic.lajournade@email.com");
             messageHelper.setTo(notificationEmail.getRecipient());
             messageHelper.setSubject(notificationEmail.getSubject());
             messageHelper.setText(mailContentBuilder.build(notificationEmail.getBody()));
-
         };
 
         try {
