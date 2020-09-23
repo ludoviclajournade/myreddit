@@ -1,4 +1,4 @@
-package mapper;
+package com.llajournade.myreddit.mapper;
 
 import com.llajournade.myreddit.dto.SubredditDto;
 import com.llajournade.myreddit.model.Post;

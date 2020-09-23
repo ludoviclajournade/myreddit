@@ -6,7 +6,7 @@ import com.llajournade.myreddit.model.Subreddit;
 import com.llajournade.myreddit.repository.SubredditRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import mapper.SubredditMapper;
+import com.llajournade.myreddit.mapper.SubredditMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

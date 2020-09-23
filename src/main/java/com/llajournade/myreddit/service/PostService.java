@@ -2,9 +2,7 @@ package com.llajournade.myreddit.service;
 
 import com.llajournade.myreddit.dto.PostRequest;
 import com.llajournade.myreddit.dto.PostResponse;
-import com.llajournade.myreddit.dto.SubredditDto;
 import com.llajournade.myreddit.exception.PostNotFoundException;
-import com.llajournade.myreddit.exception.SpringRedditException;
 import com.llajournade.myreddit.exception.SubredditNotFoundException;
 import com.llajournade.myreddit.model.Post;
 import com.llajournade.myreddit.model.Subreddit;
@@ -14,14 +12,12 @@ import com.llajournade.myreddit.repository.SubredditRepository;
 import com.llajournade.myreddit.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import mapper.PostMapper;
-import mapper.SubredditMapper;
+import com.llajournade.myreddit.mapper.PostMapper;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,7 +35,8 @@ public class PostService {
     public void save(PostRequest postRequest) {
         Subreddit subreddit = subredditRepository.findByName(postRequest.getSubredditName())
                 .orElseThrow(() -> new SubredditNotFoundException(postRequest.getSubredditName()));
-        postRepository.save(postMapper.map(postRequest, subreddit, authService.getCurrentUser()));
+        Post post = postMapper.map(postRequest, subreddit, authService.getCurrentUser());
+        postRepository.save(post);
     }
 
     @Transactional(readOnly = true)

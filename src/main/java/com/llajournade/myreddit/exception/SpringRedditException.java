@@ -8,7 +8,8 @@ public class SpringRedditException extends RuntimeException {
         super(exMessage,e);
     }
 
-    public SpringRedditException(String invalid_token) {
+    public SpringRedditException(String exMessage) {
+        super(exMessage);
     }
 
 }
