@@ -22,3 +22,6 @@ spring:
 # Reglage serveur
 server:
   port: 10000
+jwt:
+  expiration:
+    time: 900000

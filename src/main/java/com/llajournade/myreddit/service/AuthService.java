@@ -1,7 +1,8 @@
 package com.llajournade.myreddit.service;
 
 import com.llajournade.myreddit.dto.AuthenticationResponse;
-import com.llajournade.myreddit.dto.LogingRequest;
+import com.llajournade.myreddit.dto.LoginRequest;
+import com.llajournade.myreddit.dto.RefreshTokenRequest;
 import com.llajournade.myreddit.dto.RegisterRequest;
 import com.llajournade.myreddit.exception.SpringRedditException;
 import com.llajournade.myreddit.model.NotificationEmail;
@@ -41,6 +42,7 @@ public class AuthService {
     private final MailService mailService;
     private final AuthenticationManager authenticationManager;
     private final JwtProvider jwtProvider;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public void signup(RegisterRequest registerRequest) {
@@ -84,12 +86,17 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    public AuthenticationResponse login(LogingRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
+    public AuthenticationResponse login(LoginRequest loginRequest) {
+        Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(),
                 loginRequest.getPassword()));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtProvider.generateToken(authentication);
-        return new AuthenticationResponse(token,loginRequest.getUsername());
+        SecurityContextHolder.getContext().setAuthentication(authenticate);
+        String token = jwtProvider.generateToken(authenticate);
+        return AuthenticationResponse.builder()
+                .authenticationToken(token)
+                .refreshToken(refreshTokenService.generateRefreshToken().getToken())
+                .expiresAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationTime()))
+                .username(loginRequest.getUsername())
+                .build();
     }
 
     @Transactional(readOnly = true)
@@ -103,5 +110,16 @@ public class AuthService {
     public boolean isLoggedIn() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated();
+    }
+
+    public AuthenticationResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        refreshTokenService.validateRefreshToken(refreshTokenRequest.getRefreshToken());
+        String token = jwtProvider.generateTokenWithUserName(refreshTokenRequest.getUsername());
+        return AuthenticationResponse.builder()
+                .authenticationToken(token)
+                .refreshToken(refreshTokenRequest.getRefreshToken())
+                .expiresAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationTime()))
+                .username(refreshTokenRequest.getUsername())
+                .build();
     }
 }
